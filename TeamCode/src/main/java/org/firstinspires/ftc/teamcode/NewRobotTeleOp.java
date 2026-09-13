@@ -18,6 +18,7 @@ public class NewRobotTeleOp extends LinearOpMode {
         DcMotor backLeftMotor = hardwareMap.dcMotor.get("bL");
         DcMotor frontRightMotor = hardwareMap.dcMotor.get("fR");
         DcMotor backRightMotor = hardwareMap.dcMotor.get("bR");
+        DcMotor intake = hardwareMap.dcMotor.get("intake");
 
         // Reverse the right side motors. This may be wrong for your setup.
         // If your robot moves backwards when commanded to go forwards,
@@ -46,6 +47,8 @@ public class NewRobotTeleOp extends LinearOpMode {
             double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
             double x = gamepad1.left_stick_x;
             double rx = gamepad1.right_stick_x;
+            double intakePower = gamepad1.right_trigger;
+            double intakePowerReverse = -gamepad1.left_trigger;
 
             // This button choice was made so that it is hard to hit on accident,
             // it can be freely changed based on preference.
@@ -88,6 +91,9 @@ public class NewRobotTeleOp extends LinearOpMode {
                 frontRightMotor.setPower(0);
                 backRightMotor.setPower(0);
             }
+
+            intake.setPower(intakePower*0.95);
+            intake.setPower(intakePowerReverse*0.95);
 
             frontLeftMotor.setPower(frontLeftPower);
             backLeftMotor.setPower(backLeftPower);
