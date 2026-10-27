@@ -47,8 +47,7 @@ public class NewRobotTeleOp extends LinearOpMode {
             double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
             double x = gamepad1.left_stick_x;
             double rx = gamepad1.right_stick_x;
-            double intakePower = gamepad1.right_trigger;
-            double intakePowerReverse = -gamepad1.left_trigger;
+            double intakePower = gamepad1.right_trigger - gamepad1.left_trigger;
 
             // This button choice was made so that it is hard to hit on accident,
             // it can be freely changed based on preference.
@@ -59,9 +58,12 @@ public class NewRobotTeleOp extends LinearOpMode {
 
             double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-            // Rotate the movement direction counter to the bot's rotation
+//             Rotate the movement direction counter to the bot's rotation
             double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
             double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+
+//            double rotX = x;
+//            double rotY = y;
 
             rotX = rotX * 1.1;  // Counteract imperfect strafing
 
@@ -74,31 +76,15 @@ public class NewRobotTeleOp extends LinearOpMode {
             double frontRightPower = (rotY - rotX - rx) / denominator;
             double backRightPower = (rotY + rotX - rx) / denominator;
 
-            if(gamepad1.a){
-                frontLeftMotor.setPower(1);
-            }
-            if(gamepad1.b){
-                frontRightMotor.setPower(1);
-            }
-            if(gamepad1.y){
-                backRightMotor.setPower(1);
-            }
-            if(gamepad1.x){
-                backLeftMotor.setPower(1);
-            } else {
-                frontLeftMotor.setPower(0);
-                backLeftMotor.setPower(0);
-                frontRightMotor.setPower(0);
-                backRightMotor.setPower(0);
-            }
 
-            intake.setPower(intakePower*0.95);
-            intake.setPower(intakePowerReverse*0.95);
 
-            frontLeftMotor.setPower(frontLeftPower);
-            backLeftMotor.setPower(backLeftPower);
-            frontRightMotor.setPower(frontRightPower);
-            backRightMotor.setPower(backRightPower);
+            intake.setPower(intakePower);
+
+
+            frontLeftMotor.setPower(frontLeftPower*0.5);
+            backLeftMotor.setPower(backLeftPower*0.5);
+            frontRightMotor.setPower(frontRightPower*0.5);
+            backRightMotor.setPower(backRightPower*0.5);
         }
     }
 }
