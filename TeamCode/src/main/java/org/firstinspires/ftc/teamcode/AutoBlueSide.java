@@ -30,10 +30,8 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -98,6 +96,8 @@ public class AutoBlueSide extends LinearOpMode {
         backLeftDrive  = hardwareMap.get(DcMotor.class, "bL");
         backRightDrive = hardwareMap.get(DcMotor.class, "bR");
 
+
+
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // When run, this OpMode should start both motors driving forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
@@ -139,7 +139,7 @@ public class AutoBlueSide extends LinearOpMode {
         encoderDrive(DRIVE_SPEED, -30, 30, 30, -30, 4.0); // Move forward 100 inches
 
 
-        //encoderDrive(TURN_SPEED, -40  , 40, 40, -40, 4.0);  // S2: Turn left 12 Inches with 4 Sec timeout, adjust value based on track width
+        //encoderDrive(TURN_SPEED, -12  , 12, 12, -12, 4.0);  // S2: Turn left 12 Inches with 4 Sec timeout, adjust value based on track width
 //        encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
 
         telemetry.addData("Path", "Complete");
