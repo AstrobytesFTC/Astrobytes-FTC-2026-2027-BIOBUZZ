@@ -13,7 +13,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
-@TeleOp(name = "CombinedTeleop", group = "Main")
+@TeleOp
 public class FinalScrimmageTeleOp extends LinearOpMode {
     // Tuning knobs
     private static final double NORMAL_SPEED = 0.5; // same as your old code
@@ -41,7 +41,7 @@ public class FinalScrimmageTeleOp extends LinearOpMode {
     private double pollenPos = 0.5;
     private double nectarPos = 0.5;
 
-    double targetVelocity = 1000;
+    double targetPower = 0.7;
 
     boolean lastUp, lastDown;
 
@@ -83,10 +83,11 @@ public class FinalScrimmageTeleOp extends LinearOpMode {
 
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        pollenTurret.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        nectarTurret.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+//        pollenTurret.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+//        nectarTurret.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         pollenTurret.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         // Hub orientation kept from your old code
         IMU imu = hardwareMap.get(IMU.class, "imu");
@@ -135,39 +136,41 @@ public class FinalScrimmageTeleOp extends LinearOpMode {
             backRightMotor.setPower(brP * scale);
 
             //intake!
-            intake.setPower(gamepad1.right_trigger - gamepad1.left_trigger);
+            intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger)*0.7);
 
+            if (gamepad2.dpad_up && !lastUp) targetPower += 0.1;
+            if (gamepad2.dpad_down && !lastDown) targetPower -= 0.1;
 
             lastUp = gamepad2.dpad_up;
             lastDown = gamepad2.dpad_down;
 
             // Test controls
             if (gamepad2.a) {
-                pollenTurret.setVelocity(targetVelocity);
+                pollenTurret.setPower(0.7);
 
             } else if (gamepad2.back) {
-                pollenTurret.setVelocity(0);
-                nectarTurret.setVelocity(0);
+                pollenTurret.setPower(0);
+                nectarTurret.setPower(0);
             } else if (gamepad2.b){
-                nectarTurret.setVelocity(targetVelocity);
+//                nectarTurret.setVelocity(targetVelocity);
             }
 
             //Feeder Control
-            feeder.setPower((gamepad2.right_trigger - gamepad2.left_trigger)*0.7);
+            feeder.setPower(gamepad2.right_trigger - gamepad2.left_trigger);
 
 
             //flower continuous rotation servo or sm
             if(gamepad2.dpad_left){
                 flowerServo.setPower(-1);
                 sleep(500);
-                flowerServo.setPower(0);
+                flowerServo.setPower(0.3);
             }else if(gamepad2.dpad_right){
                 flowerServo.setPower(1);
                 sleep(500);
-                flowerServo.setPower(0);
+                flowerServo.setPower(0.3);
             }
             //Telemetry
-            telemetry.addData("Target", targetVelocity);
+            telemetry.addData("Target", targetPower);
             telemetry.addData("Pollen Turret velocity", pollenTurret.getVelocity());
             telemetry.addData("Pollen amps", pollenTurret.getCurrent(CurrentUnit.AMPS));
             telemetry.addData("Battery V", hardwareMap.voltageSensor.iterator().next().getVoltage());
@@ -184,6 +187,14 @@ public class FinalScrimmageTeleOp extends LinearOpMode {
             telemetry.addLine("DPAD UP/DOWN - Pollen turret velocity adjuster");
             telemetry.addLine("BACK - Stop Turrets");
             telemetry.addLine("Right Bumper - Turbo Mode/Speed");
+            telemetry.addLine("MOVEMENT & INTAKE GAMEPAD 1");
+            telemetry.addLine("FEEDER & EVT ELSE");
+            telemetry.addData("Pollen pos", pollenTurret.getCurrentPosition());
+            telemetry.addData("Pollen vel", pollenTurret.getVelocity());
+            telemetry.addData("Pollen power", pollenTurret.getPower());
+            telemetry.addData("Nectar pos", nectarTurret.getCurrentPosition());
+            telemetry.addData("Nectar vel", nectarTurret.getVelocity());
+            telemetry.addData("Nectar power", nectarTurret.getPower());
             telemetry.update();
         }
     }
