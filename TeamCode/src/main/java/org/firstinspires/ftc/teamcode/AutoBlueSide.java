@@ -1,37 +1,12 @@
-/* Copyright (c) 2017 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -70,6 +45,13 @@ public class AutoBlueSide extends LinearOpMode {
     private DcMotor backLeftDrive = null;
     private DcMotor backRightDrive = null;
 
+    private DcMotor intake;
+
+    private DcMotorEx pollenTurret;
+    private DcMotorEx nectarTurret;
+    private DcMotorEx feeder;
+
+    double targetVelocity = 100;
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -84,7 +66,7 @@ public class AutoBlueSide extends LinearOpMode {
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double     DRIVE_SPEED             = 0.6;
+    static final double     DRIVE_SPEED             = 0.3;
     static final double     TURN_SPEED              = 0.5;
 
     @Override
@@ -95,6 +77,12 @@ public class AutoBlueSide extends LinearOpMode {
         frontRightDrive = hardwareMap.get(DcMotor.class, "fR");
         backLeftDrive  = hardwareMap.get(DcMotor.class, "bL");
         backRightDrive = hardwareMap.get(DcMotor.class, "bR");
+
+        intake = hardwareMap.dcMotor.get("intake");
+        nectarTurret = hardwareMap.get(DcMotorEx.class, "nt");
+
+        pollenTurret = hardwareMap.get(DcMotorEx.class, "pt");
+        feeder = hardwareMap.get(DcMotorEx.class, "feeder");
 
 
 
@@ -117,6 +105,17 @@ public class AutoBlueSide extends LinearOpMode {
         backLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+
+        pollenTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        nectarTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        pollenTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        nectarTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        pollenTurret.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
         // Send telemetry message to indicate successful Encoder reset
         telemetry.addData("Starting at",  "%7d :%7d :%7d :%7d",
                 frontLeftDrive.getCurrentPosition(),
@@ -128,24 +127,39 @@ public class AutoBlueSide extends LinearOpMode {
 
         // Wait for the game to start (driver presses START)
         waitForStart();
+        if(isStopRequested()) return;
 
         // Step through each leg of the path,
         // Note: Reverse movement is obtained by setting a negative distance (not speed)
-        encoderDrive(DRIVE_SPEED,  22, 22, 22, 22, 5.0);  // S1: Forward 22 Inches with 5 Sec timeout
-        encoderDrive(DRIVE_SPEED, -5  , 5, 5, -5, 4.0); //Strafe left 40, testing vlaue
-//      encoderDrive(DRIVE_SPEED, -20  , 20, 20, -20, 4.0);
-        // S2: strafe left 40 inches
-        encoderDrive(DRIVE_SPEED, 100, 100, 100, 100, 4.0); // Move forward 100 inches
-        encoderDrive(DRIVE_SPEED, -30, 30, 30, -30, 4.0); // Move forward 100 inches
+        //TS ONLY MOVES FORWARD BECAUSE
+        encoderDrive(DRIVE_SPEED,  6, 6, 6, 6, 5.0);  // S1: Forward 22 Inches with 5 Sec timeout
+
+//        launchPollen();
+//        runIntake(0.7);
+//        runFeeder(1.0);
+//        sleep(2000);
+//        runIntake(0);
+//        runFeeder(0);
+//        stopTurrets();
 
 
-        //encoderDrive(TURN_SPEED, -12  , 12, 12, -12, 4.0);  // S2: Turn left 12 Inches with 4 Sec timeout, adjust value based on track width
+//        encoderDrive(DRIVE_SPEED, -3  , 3, 3, -3, 6.0); //Strafe left 40, testing vlaue
+////      encoderDrive(DRIVE_SPEED, -20  , 20, 20, -20, 4.0);
+//        // S2: strafe left 40 inches
+        encoderDrive(DRIVE_SPEED, 70, 70, 70, 70, 10); // Move forward 100 inches
+        encoderDrive(DRIVE_SPEED, -30, 30, 30, -30, 4.0); // strafe left 30 inches
+
+
+        //encoderDrive(TURN_SPEED, -40  , 40, 40, -40, 4.0);  // S2: Turn left 12 Inches with 4 Sec timeout, adjust value based on track width
 //        encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
 
         telemetry.addData("Path", "Complete");
         telemetry.update();
         sleep(1000);  // pause to display final telemetry message.
     }
+
+
+
 
     /*
      *  Method to perform a relative move, based on encoder counts.
@@ -155,14 +169,14 @@ public class AutoBlueSide extends LinearOpMode {
      *  2) Move runs out of time
      *  3) Driver stops the OpMode running.
      */
-    public void encoderDrive(double speed,
-                             double frontLeftInches, double frontRightInches,
-                             double backLeftInches, double backRightInches,
-                             double timeoutS) {
+    public void encoderDrive(double speed, double frontLeftInches, double frontRightInches, double backLeftInches,
+                             double backRightInches, double timeoutS) {
         int frontLeftTarget;
         int frontRightTarget;
         int backLeftTarget;
         int backRightTarget;
+
+
 
         // Ensure that the OpMode is still active
         if (opModeIsActive()) {
@@ -231,4 +245,30 @@ public class AutoBlueSide extends LinearOpMode {
             sleep(250);   // optional pause after each move.
         }
     }
+
+    public void launchPollen(){
+        pollenTurret.setVelocity(targetVelocity);
+
+    }
+    public void launchNectar(){
+        nectarTurret.setVelocity(targetVelocity);
+
+    }
+
+    public void runIntake(double power){
+        intake.setPower(power);
+
+    }
+
+    public void runFeeder(double power){
+        feeder.setPower(power);
+
+    }
+
+    public void stopTurrets(){
+        pollenTurret.setVelocity(0);
+        nectarTurret.setVelocity(0);
+
+    }
+
 }

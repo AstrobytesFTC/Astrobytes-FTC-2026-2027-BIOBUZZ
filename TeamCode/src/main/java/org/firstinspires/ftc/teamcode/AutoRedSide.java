@@ -1,5 +1,5 @@
 
-        package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -66,7 +66,7 @@ public class AutoRedSide extends LinearOpMode {
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double     DRIVE_SPEED             = 0.6;
+    static final double     DRIVE_SPEED             = 0.3;
     static final double     TURN_SPEED              = 0.5;
 
     @Override
@@ -131,7 +131,8 @@ public class AutoRedSide extends LinearOpMode {
 
         // Step through each leg of the path,
         // Note: Reverse movement is obtained by setting a negative distance (not speed)
-//        encoderDrive(DRIVE_SPEED,  22, 22, 22, 22, 5.0);  // S1: Forward 22 Inches with 5 Sec timeout
+        //TS ONLY MOVES FORWARD BECAUSE
+        encoderDrive(DRIVE_SPEED,  6, 6, 6, 6, 5.0);  // S1: Forward 22 Inches with 5 Sec timeout
 
 //        launchPollen();
 //        runIntake(0.7);
@@ -142,11 +143,11 @@ public class AutoRedSide extends LinearOpMode {
 //        stopTurrets();
 
 
-        encoderDrive(DRIVE_SPEED, -7  , 7, 7, -7, 6.0); //Strafe left 40, testing vlaue
-//      encoderDrive(DRIVE_SPEED, -20  , 20, 20, -20, 4.0);
-        // S2: strafe left 40 inches
+//        encoderDrive(DRIVE_SPEED, -3  , 3, 3, -3, 6.0); //Strafe left 40, testing vlaue
+////      encoderDrive(DRIVE_SPEED, -20  , 20, 20, -20, 4.0);
+//        // S2: strafe left 40 inches
         encoderDrive(DRIVE_SPEED, 70, 70, 70, 70, 10); // Move forward 100 inches
-        encoderDrive(DRIVE_SPEED, -30, 30, 30, -30, 4.0); // Move forward 100 inches
+        encoderDrive(DRIVE_SPEED, -30, 30, 30, -30, 4.0); // strafe left 30 inches
 
 
         //encoderDrive(TURN_SPEED, -40  , 40, 40, -40, 4.0);  // S2: Turn left 12 Inches with 4 Sec timeout, adjust value based on track width
