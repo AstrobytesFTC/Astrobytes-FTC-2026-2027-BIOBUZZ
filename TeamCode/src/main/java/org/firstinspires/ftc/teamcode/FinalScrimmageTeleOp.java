@@ -41,7 +41,7 @@ public class FinalScrimmageTeleOp extends LinearOpMode {
     private double pollenPos = 0.5;
     private double nectarPos = 0.5;
 
-    double targetPower = 0.7;
+    double targetPower = 0.65;
 
     boolean lastUp, lastDown;
 
@@ -73,6 +73,8 @@ public class FinalScrimmageTeleOp extends LinearOpMode {
         backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
 
         DcMotor[] drive = {frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor};
 
@@ -136,17 +138,17 @@ public class FinalScrimmageTeleOp extends LinearOpMode {
             backRightMotor.setPower(brP * scale);
 
             //intake!
-            intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger)*0.7);
+            intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger));
 
-            if (gamepad2.dpad_up && !lastUp) targetPower += 0.1;
-            if (gamepad2.dpad_down && !lastDown) targetPower -= 0.1;
+            if (gamepad2.dpad_up && !lastUp) targetPower += 0.025;
+            if (gamepad2.dpad_down && !lastDown) targetPower -= 0.025;
 
             lastUp = gamepad2.dpad_up;
             lastDown = gamepad2.dpad_down;
 
             // Test controls
             if (gamepad2.a) {
-                pollenTurret.setPower(0.7);
+                pollenTurret.setPower(-targetPower);
 
             } else if (gamepad2.back) {
                 pollenTurret.setPower(0);
@@ -163,11 +165,11 @@ public class FinalScrimmageTeleOp extends LinearOpMode {
             if(gamepad2.dpad_left){
                 flowerServo.setPower(-1);
                 sleep(500);
-                flowerServo.setPower(0.3);
+                flowerServo.setPower(0);
             }else if(gamepad2.dpad_right){
                 flowerServo.setPower(1);
                 sleep(500);
-                flowerServo.setPower(0.3);
+                flowerServo.setPower(0);
             }
             //Telemetry
             telemetry.addData("Target", targetPower);

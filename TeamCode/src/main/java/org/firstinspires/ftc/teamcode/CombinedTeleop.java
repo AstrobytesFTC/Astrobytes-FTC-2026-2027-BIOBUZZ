@@ -31,6 +31,7 @@ public class CombinedTeleop extends LinearOpMode {
     private DcMotor intake;
 
     private DcMotorEx pollenTurret;
+    private DcMotorEx nectarTurret;
     private DcMotorEx feeder;
 
     private Servo nectarServo;
@@ -58,6 +59,7 @@ public class CombinedTeleop extends LinearOpMode {
         frontRightMotor = hardwareMap.dcMotor.get("fR");
         backRightMotor = hardwareMap.dcMotor.get("bR");
         intake = hardwareMap.dcMotor.get("intake");
+        nectarTurret = hardwareMap.get(DcMotorEx.class, "nt");
 
         pollenTurret = hardwareMap.get(DcMotorEx.class, "pt");
         nectarServo = hardwareMap.get(Servo.class, "ns");
@@ -82,6 +84,7 @@ public class CombinedTeleop extends LinearOpMode {
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         pollenTurret.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        nectarTurret.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         // Hub orientation kept from your old code
         IMU imu = hardwareMap.get(IMU.class, "imu");
@@ -131,7 +134,7 @@ public class CombinedTeleop extends LinearOpMode {
             backRightMotor.setPower(brP * scale);
 
             //intake!
-            intake.setPower(gamepad2.right_trigger - gamepad2.left_trigger);
+            intake.setPower(gamepad1.right_trigger - gamepad1.left_trigger);
 
             //pollen turret velocity
             if (gamepad2.dpad_up && !lastUp) targetVelocity += 50;
@@ -141,29 +144,32 @@ public class CombinedTeleop extends LinearOpMode {
             lastDown = gamepad2.dpad_down;
 
             // Test controls
-            if (gamepad2.a) pollenTurret.setVelocity(targetVelocity);
-            // if (gamepad1.b) nectarTurret.setVelocity(targetVelocity);
+            if (gamepad2.a) {
+                pollenTurret.setVelocity(targetVelocity);
 
-            if (gamepad2.x) pollenTurret.setVelocity(-targetVelocity);
-            // if (gamepad1.y) nectarTurret.setVelocity(-targetVelocity);
+            } else if (gamepad2.x) {
+                pollenTurret.setVelocity(-targetVelocity);
 
-            if (gamepad2.back) {
+            } else if (gamepad2.back) {
                 pollenTurret.setVelocity(0);
-                // nectarTurret.setVelocity(0);
+                nectarTurret.setVelocity(0);
             }
+
+            if(gamepad2.y) nectarTurret.setVelocity(-targetVelocity);
+            if(gamepad2.b) nectarTurret.setVelocity(targetVelocity);
 
             //Feeder!   REVERSE THE ORDER IF FEEDER AND INTAKE MUST RUN IN DIFFERENT DIRECTION
             //OR MAP CONTROL FOR FEEDER DIFFERENTLY IF THEY RUN INDEPENDENTLY
 
             //rn, feeder and intake are mapped to the same buttons and directions, change as needed
-            feeder.setPower(gamepad2.right_trigger - gamepad2.left_trigger);
+            feeder.setPower((gamepad2.right_trigger - gamepad2.left_trigger)*0.5);
 
             //Rotation
             pollenPos = aim(gamepad2.left_stick_x, gamepad2.left_stick_y, pollenPos);
             nectarPos = aim(gamepad2.right_stick_x, gamepad2.right_stick_y, nectarPos);
 
-            pollenServo.setPosition(pollenPos);
-            nectarServo.setPosition(nectarPos);
+//            pollenServo.setPosition(pollenPos);
+//            nectarServo.setPosition(nectarPos);
 
             //flower continious rotation servo or sm
             if(gamepad2.dpad_left) {

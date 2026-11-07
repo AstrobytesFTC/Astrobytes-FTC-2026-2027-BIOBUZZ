@@ -24,7 +24,7 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
     private static final boolean INVERT_ALL_DRIVE = false;
 
     // Turret velocity tuning (ticks per second)
-    private static final double VELOCITY_STEP = 25;
+    private static final double VELOCITY_STEP = 50;
     private static final double MIN_VELOCITY = 0;
     private static final double MAX_VELOCITY = 2800; // set to your motor's max ticks/sec
 
@@ -47,7 +47,7 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
     private double nectarPos = 0.5;
 
     // Target turret velocity in ticks per second (replaces old 0.7 power)
-    double targetVelocity = 100;
+    double targetVelocity = 2000;
 
     boolean lastUp, lastDown;
 
@@ -90,12 +90,12 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Velocity control needs the encoders running
-        pollenTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        nectarTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        pollenTurret.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        nectarTurret.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         pollenTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         nectarTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        pollenTurret.setDirection(DcMotorSimple.Direction.REVERSE);
+//
 
 
         // Hub orientation kept from your old code
@@ -147,7 +147,7 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
             backRightMotor.setPower(brP * scale);
 
             //intake!
-            intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger)*0.7);
+            intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger)*0.9);
 
             // Adjust target velocity
             if (gamepad2.dpad_up && !lastUp) targetVelocity += VELOCITY_STEP;
@@ -160,10 +160,11 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
             // Turret controls (velocity in ticks/sec)
             if (gamepad2.a) {
                 pollenTurret.setVelocity(targetVelocity);
-            } else if (gamepad2.back) {
+            } else {
                 pollenTurret.setVelocity(0);
                 nectarTurret.setVelocity(0);
-            } else if (gamepad2.b){
+            }
+            if(gamepad2.b){
                 nectarTurret.setVelocity(targetVelocity);
             }
 
