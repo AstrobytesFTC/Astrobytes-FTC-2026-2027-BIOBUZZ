@@ -1,14 +1,12 @@
 package org.firstinspires.ftc.teamcode.tutorials;
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-public class TurretLimelightNew
-{
+public class TurretLimelightNew {
     private Servo turretServo;
     private double kP = 0.001;
     private double kD = 0;
@@ -32,37 +30,32 @@ public class TurretLimelightNew
     }
 
     //kP
-    public void setkD(double newkD
-    ){
+    public void setkD(double newkD){
         kD = newkD;
 
     }
-    public double getkD
-            (){
+    public double getkD(){
         return kD;
 
     }
 
     //kP
-    public void setkP(double newkP
-    ){
+    public void setkP(double newkP){
         kP = newkP;
 
     }
-    public double getkP
-            (){
+    public double getkP(){
         return kP;
 
     }
-    public void resetTimer
-            (){
+    public void resetTimer(){
         timer.reset();
         lastError = 0;
 
 
     }
     // () part might need a change below
-    public void update(LLResult result, Telemetry telemetry){
+    public void update(LLResult result, Telemetry telemetry, String name){
         double deltaTime = timer.seconds();
         timer.reset();
         if (result == null || !result.isValid()) {
@@ -77,35 +70,31 @@ public class TurretLimelightNew
         double error = goalX - result.getTx();
         double pTerm = error * kP;
         double dTerm = 0;
-        if (deltaTime > 0)
-        {
+
+        if (deltaTime > 0) {
             dTerm = ((error-lastError)/ deltaTime) * kD;
             lastError = error;
 
         }
-        if (Math.abs(error)< angleTolerance)
-        {
+        if (Math.abs(error)< angleTolerance) {
             power = 0;
-        } else
-        {
+        } else {
             power = Range.clip(pTerm + dTerm, -MAX_STEP, MAX_STEP);
 
         }
 
 //safety encoder check or magentic limit switch check or other safeties
 
-        double newPosition = Range.clip(
-                currentPosition + power, minPosition, maxPosition
-        );
+        double newPosition = Range.clip(currentPosition + power, minPosition, maxPosition);
 
         currentPosition = newPosition;
         turretServo.setPosition(currentPosition);
-        telemetry.addData("Error", error);
-        telemetry.addData("P Term", pTerm);
-        telemetry.addData("D Term", dTerm);
-        telemetry.addData("Power", power);
-        telemetry.addData("Servo Position", currentPosition);
-        telemetry.addData("Delta Time", deltaTime);
+        telemetry.addData(name + " Error", error);
+        telemetry.addData(name + " P Term", pTerm);
+        telemetry.addData(name +" D Term", dTerm);
+        telemetry.addData(name +" Power", power);
+        telemetry.addData(name + " Servo Position", currentPosition);
+        telemetry.addData(name +" Delta Time", deltaTime);
     }
     public void stop (){
 

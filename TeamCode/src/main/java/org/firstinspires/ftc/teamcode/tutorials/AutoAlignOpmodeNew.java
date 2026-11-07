@@ -5,10 +5,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.qualcomm.robotcore.util.ElapsedTime;
+
 
 @TeleOp
 public class AutoAlignOpmodeNew extends OpMode {
@@ -41,8 +38,8 @@ public class AutoAlignOpmodeNew extends OpMode {
     @Override
     public void loop() {
         LLResult result = limelight.getLatestResult();
-        pollenTurret.update(result, telemetry);
-        nectarTurret.update(result, telemetry);
+        pollenTurret.update(result, telemetry, "Pollen");
+        nectarTurret.update(result, telemetry, "Nectar");
 
         if (result != null && result.isValid()) {
             telemetry.addData("Target TX", result.getTx());
