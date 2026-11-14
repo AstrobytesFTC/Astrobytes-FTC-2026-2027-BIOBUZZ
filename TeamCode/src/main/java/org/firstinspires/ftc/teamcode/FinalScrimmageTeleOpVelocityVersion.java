@@ -10,23 +10,23 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.tutorials.TurretLimelightNew;
 
 @TeleOp
 public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
-    // Tuning knobs
-    private static final double NORMAL_SPEED = 0.5; // same as your old code
-    private static final double TURBO_SPEED = 1.0; // hold right bumper
+    private static final double NORMAL_SPEED = 0.5;
+    private static final double TURBO_SPEED = 1.0;
     private static final double STRAFE_CORRECTION = 1.1;
 
-    // Flip to true if the robot drives backward when you push forward
     private static final boolean INVERT_ALL_DRIVE = false;
 
-    // Turret velocity tuning (ticks per second)
     private static final double VELOCITY_STEP = 50;
     private static final double MIN_VELOCITY = 0;
-    private static final double MAX_VELOCITY = 2800; // set to your motor's max ticks/sec
+    private static final double MAX_VELOCITY = 2800;
 
     private DcMotor frontLeftMotor;
     private DcMotor backLeftMotor;
@@ -35,9 +35,10 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
 
     private DcMotor intake;
 
+    private DcMotorEx feeder;
+
     private DcMotorEx pollenTurret;
     private DcMotorEx nectarTurret;
-    private DcMotorEx feeder;
 
     private Servo nectarServo;
     private Servo pollenServo;
@@ -46,15 +47,18 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
     private double pollenPos = 0.5;
     private double nectarPos = 0.5;
 
-    // Target turret velocity in ticks per second (replaces old 0.7 power)
+    private Limelight3A limelight;
+    private TurretLimelightNew pollenAligner = new TurretLimelightNew();
+    private TurretLimelightNew nectarAligner = new TurretLimelightNew();
+
     double targetVelocity = 2000;
 
     boolean lastUp, lastDown;
 
-    final double TURRET_RANGE_DEG = 360; // turret degrees covered by servo 0 to 1
+    final double TURRET_RANGE_DEG = 360;
 
     double aim(double x, double y, double current) {
-        if (Math.hypot(x, y) < 0.5) return current; // stick released, hold position
+        if (Math.hypot(x, y) < 0.5) return current;
         return Range.clip(0.5 + Math.toDegrees(Math.atan2(x, -y)) / TURRET_RANGE_DEG, 0, 1);
     }
 
@@ -74,7 +78,6 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
 
         feeder = hardwareMap.get(DcMotorEx.class, "feeder");
 
-        // Directions kept from your old code (all four reversed)
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -89,16 +92,16 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
 
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        // Velocity control needs the encoders running
         pollenTurret.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         nectarTurret.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         pollenTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         nectarTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-//
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        pollenAligner.init(hardwareMap, "pss");
+        nectarAligner.init(hardwareMap, "ns");
+        limelight.pipelineSwitch(0);
 
-
-        // Hub orientation kept from your old code
         IMU imu = hardwareMap.get(IMU.class, "imu");
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -112,8 +115,11 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
 
         if (isStopRequested()) return;
 
-        while (opModeIsActive()) {
+        pollenAligner.resetTimer();
+        nectarAligner.resetTimer();
+        limelight.start();
 
+        while (opModeIsActive()) {
 
             double y = -gamepad1.left_stick_y;
             double x = gamepad1.left_stick_x;
@@ -122,8 +128,6 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
             if (gamepad1.options) {
                 imu.resetYaw();
             }
-            // WARNING: botheading must be set at 0, that's the only way we
-            // can actually run the drivetrain controls we want, I tested this.
             double botHeading = 0;
 
             double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
@@ -146,10 +150,8 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
             frontRightMotor.setPower(frP * scale);
             backRightMotor.setPower(brP * scale);
 
-            //intake!
-            intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger)*0.9);
+            intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger));
 
-            // Adjust target velocity
             if (gamepad2.dpad_up && !lastUp) targetVelocity += VELOCITY_STEP;
             if (gamepad2.dpad_down && !lastDown) targetVelocity -= VELOCITY_STEP;
             targetVelocity = Range.clip(targetVelocity, MIN_VELOCITY, MAX_VELOCITY);
@@ -157,7 +159,6 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
             lastUp = gamepad2.dpad_up;
             lastDown = gamepad2.dpad_down;
 
-            // Turret controls (velocity in ticks/sec)
             if (gamepad2.a) {
                 pollenTurret.setVelocity(targetVelocity);
             } else {
@@ -168,11 +169,19 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
                 nectarTurret.setVelocity(targetVelocity);
             }
 
-            //Feeder Control
             feeder.setPower(gamepad2.right_trigger - gamepad2.left_trigger);
 
+            LLResult result = limelight.getLatestResult();
+            pollenAligner.update(result, telemetry, "Pollen");
+            nectarAligner.update(result, telemetry, "Nectar");
 
-            //flower continuous rotation servo or sm
+            if (result != null && result.isValid()) {
+                telemetry.addData("Target TX", result.getTx());
+                telemetry.addData("Target TY", result.getTy());
+            } else {
+                telemetry.addLine("No Tag Detected.");
+            }
+
             if(gamepad2.dpad_left){
                 flowerServo.setPower(-1);
                 sleep(500);
@@ -182,7 +191,6 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
                 sleep(500);
                 flowerServo.setPower(0);
             }
-            //Telemetry
             telemetry.addData("Target velocity", targetVelocity);
             telemetry.addData("Pollen Turret velocity", pollenTurret.getVelocity());
             telemetry.addData("Pollen amps", pollenTurret.getCurrent(CurrentUnit.AMPS));
@@ -200,6 +208,7 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
             telemetry.addLine("DPAD UP/DOWN - Turret velocity adjuster");
             telemetry.addLine("BACK - Stop Turrets");
             telemetry.addLine("Right Bumper - Turbo Mode/Speed");
+            telemetry.addLine("Limelight auto-align is always on");
             telemetry.addLine("MOVEMENT & INTAKE GAMEPAD 1");
             telemetry.addLine("FEEDER & EVT ELSE");
             telemetry.addData("Pollen pos", pollenTurret.getCurrentPosition());
@@ -210,5 +219,9 @@ public class FinalScrimmageTeleOpVelocityVersion extends LinearOpMode {
             telemetry.addData("Nectar power", nectarTurret.getPower());
             telemetry.update();
         }
+
+        pollenAligner.stop();
+        nectarAligner.stop();
+        limelight.stop();
     }
 }
