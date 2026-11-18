@@ -19,6 +19,7 @@ public class TurretLimelightNew {
     private double maxPosition = 0.8;
     private double currentPosition = 0.5;
     private double power = 0;
+    private double offset = 0;
     private final ElapsedTime timer = new ElapsedTime();
     public void init(HardwareMap hwMap, String servoName) {
 
@@ -54,6 +55,10 @@ public class TurretLimelightNew {
 
 
     }
+
+    public void setOffset(double offset) {
+        this.offset = offset;
+    }
     // () part might need a change below
     public void update(LLResult result, Telemetry telemetry, String name){
         double deltaTime = timer.seconds();
@@ -67,7 +72,9 @@ public class TurretLimelightNew {
         }
 // start pD controlller
         //if turret moves away from target put result.getTx first
-        double error = goalX - result.getTx();
+        double adjustedTx = result.getTx() + offset;
+
+        double error = goalX - adjustedTx ;
         double pTerm = error * kP;
         double dTerm = 0;
 
