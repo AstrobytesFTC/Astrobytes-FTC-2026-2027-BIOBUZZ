@@ -10,81 +10,97 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
-import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.Limelight3A;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.tutorials.TurretLimelightNew;
+// Needed only when the pollen turret / limelight code is re-enabled:
+// import com.qualcomm.robotcore.hardware.CRServo;
+// import com.qualcomm.robotcore.hardware.Servo;
+// import com.qualcomm.hardware.limelightvision.LLResult;
+// import com.qualcomm.hardware.limelightvision.Limelight3A;
+// import org.firstinspires.ftc.teamcode.tutorials.TurretLimelightNew;
 
 @TeleOp
 public class FinalScrimmageTeleOpMovement extends LinearOpMode {
+
+    // ---------------- Constants ----------------
     private static final double NORMAL_SPEED = 0.5;
     private static final double TURBO_SPEED = 1.0;
     private static final double STRAFE_CORRECTION = 1.1;
-
     private static final boolean INVERT_ALL_DRIVE = false;
 
-    // private static final double VELOCITY_STEP = 50;
-    // private static final double MIN_VELOCITY = 0;
-    // private static final double MAX_VELOCITY = 2800;
+    private static final double VELOCITY_STEP = 50;
+    private static final double MIN_VELOCITY = 0;
+    private static final double MAX_VELOCITY = 2800;
 
+    private static final double TURRET_RANGE_DEG = 360;
+
+    // ---------------- Hardware ----------------
     private DcMotor frontLeftMotor;
     private DcMotor backLeftMotor;
     private DcMotor frontRightMotor;
     private DcMotor backRightMotor;
 
-//     private DcMotor intake;
-//
-//     private DcMotorEx feeder;
+    private DcMotor intake;
+    private DcMotorEx feeder;
+    private DcMotorEx pollenTurret;
 
-    // private DcMotorEx pollenTurret;
-    // private DcMotorEx nectarTurret;
+    private Servo pollenServo;
+    private Servo nectarServo;
+    private CRServo flowerServo;
 
+
+    // Disabled hardware (nectar turret, servos, limelight)
+     private DcMotorEx nectarTurret;
     // private Servo nectarServo;
     // private Servo pollenServo;
     // private CRServo flowerServo;
-
-    // private double pollenPos = 0.5;
-    // private double nectarPos = 0.5;
-
     // private Limelight3A limelight;
     // private TurretLimelightNew pollenAligner = new TurretLimelightNew();
     // private TurretLimelightNew nectarAligner = new TurretLimelightNew();
 
-    // double targetVelocity = 2000;
+    // ---------------- State ----------------
+    private double targetVelocity = 2000;
+    private boolean lastUp, lastDown;
 
-    // boolean lastUp, lastDown;
+    // Currently unused (servo aiming)
+    private double pollenPos = 0.5;
+    private double nectarPos = 0.5;
 
-    // final double TURRET_RANGE_DEG = 360;
-
-    // double aim(double x, double y, double current) {
-    //     if (Math.hypot(x, y) < 0.5) return current;
-    //     return Range.clip(0.5 + Math.toDegrees(Math.atan2(x, -y)) / TURRET_RANGE_DEG, 0, 1);
-    // }
+    private double aim(double x, double y, double current) {
+        if (Math.hypot(x, y) < 0.5) return current;
+        return Range.clip(0.5 + Math.toDegrees(Math.atan2(x, -y)) / TURRET_RANGE_DEG, 0, 1);
+    }
 
     @Override
     public void runOpMode() throws InterruptedException {
+
+        // ---------------- Hardware map ----------------
         frontLeftMotor = hardwareMap.dcMotor.get("fl");
         backLeftMotor = hardwareMap.dcMotor.get("bl");
         frontRightMotor = hardwareMap.dcMotor.get("fr");
         backRightMotor = hardwareMap.dcMotor.get("br");
-//         intake = hardwareMap.dcMotor.get("intake");
-        // nectarTurret = hardwareMap.get(DcMotorEx.class, "nt");
+        intake = hardwareMap.dcMotor.get("intake");
+        feeder = hardwareMap.get(DcMotorEx.class, "feeder");
+        pollenTurret = hardwareMap.get(DcMotorEx.class, "pt");
+        pollenServo = hardwareMap.get(Servo.class, "ps");
+        nectarServo = hardwareMap.get(Servo.class, "ns");
+        flowerServo = hardwareMap.get(CRServo.class, "fs");
 
-        // pollenTurret = hardwareMap.get(DcMotorEx.class, "pt");
+
+         nectarTurret = hardwareMap.get(DcMotorEx.class, "nt");
         // nectarServo = hardwareMap.get(Servo.class, "ns");
         // pollenServo = hardwareMap.get(Servo.class, "pss");
         // flowerServo = hardwareMap.get(CRServo.class, "fs");
+        // limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        pollenTurret.setDirection(DcMotorSimple.Direction.REVERSE);
 
-//         feeder = hardwareMap.get(DcMotorEx.class, "feeder");
-
-//        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        // ---------------- Drive setup ----------------
+        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-//        frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-//        backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        // frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        // backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         DcMotor[] drive = {frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor};
-
         for (DcMotor m : drive) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             m.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -92,27 +108,30 @@ public class FinalScrimmageTeleOpMovement extends LinearOpMode {
 
         // intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        // pollenTurret.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        // nectarTurret.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        // pollenTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        // nectarTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        // ---------------- Turret setup ----------------
+        pollenTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        pollenTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        pollenTurret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        pollenTurret.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        // limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        // pollenTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // ---------------- Vision setup (disabled) ----------------
         // pollenAligner.init(hardwareMap, "pss");
         // nectarAligner.init(hardwareMap, "ns");
         // limelight.pipelineSwitch(0);
 
-         IMU imu = hardwareMap.get(IMU.class, "imu");
-         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
-                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
-         imu.resetYaw();
+        // ---------------- IMU ----------------
+        IMU imu = hardwareMap.get(IMU.class, "imu");
+        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
+        imu.resetYaw();
 
-         telemetry.addLine("Ready. Options resets heading.");
-         telemetry.update();
+        telemetry.addLine("Ready.");
+        telemetry.update();
 
         waitForStart();
-
         if (isStopRequested()) return;
 
         // pollenAligner.resetTimer();
@@ -121,10 +140,13 @@ public class FinalScrimmageTeleOpMovement extends LinearOpMode {
 
         while (opModeIsActive()) {
 
+            // ---------------- Drive (robot-centric) ----------------
             double y = -gamepad1.left_stick_y;
             double x = gamepad1.left_stick_x;
             double rx = gamepad1.right_stick_x;
 
+            // Field-centric is disabled (botHeading stays 0). To enable, uncomment the reset
+            // below and set botHeading from imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS).
             // if (gamepad1.options) {
             //     imu.resetYaw();
             // }
@@ -132,7 +154,6 @@ public class FinalScrimmageTeleOpMovement extends LinearOpMode {
 
             double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
             double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
-
             rotX *= STRAFE_CORRECTION;
 
             double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
@@ -150,92 +171,63 @@ public class FinalScrimmageTeleOpMovement extends LinearOpMode {
             frontRightMotor.setPower(frP * scale);
             backRightMotor.setPower(brP * scale);
 
+            // ---------------- Intake and feeder ----------------
+            intake.setPower(gamepad1.right_trigger - gamepad1.left_trigger);
+
+            // NOTE: right_bumper is also turbo above, so reversing the feeder also turbos.
+            if (gamepad2.left_bumper) {
+                feeder.setPower(1);
+            } else if (gamepad2.right_bumper) {
+                feeder.setPower(-1);
+            } else {
+                feeder.setPower(0);
+            }
+
+            // ---------------- Turret velocity ----------------
+            if (gamepad2.dpad_up && !lastUp) targetVelocity += VELOCITY_STEP;
+            if (gamepad2.dpad_down && !lastDown) targetVelocity -= VELOCITY_STEP;
+            targetVelocity = Range.clip(targetVelocity, MIN_VELOCITY, MAX_VELOCITY);
+            lastUp = gamepad2.dpad_up;
+            lastDown = gamepad2.dpad_down;
+
+            if (gamepad2.a) {
+                pollenTurret.setVelocity(targetVelocity);
+            } else {
+                pollenTurret.setVelocity(0);
+            }
 
 
+             if (gamepad2.b) {
+                 nectarTurret.setVelocity(targetVelocity);
+             } else {
+                 nectarTurret.setVelocity(0);
+             }
 
+             if(gamepad2.x){
+                 flowerServo.setPower(1);
+                 sleep(500);
+                 flowerServo.setPower(0);
+             }
 
+             if(gamepad2.y){
+                 flowerServo.setPower(-1);
+                 sleep(500);
+                 flowerServo.setPower(0);
+             }
 
-
-
-//             intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger));
-//
-//             if(gamepad1.left_bumper){
-//                 feeder.setPower(1);;
-//
-//             }else if(gamepad1.right_bumper){
-//                 feeder.setPower(-1);
-//             }else{
-//                 feeder.setPower(0);
-//             }
-
-            // if (gamepad2.dpad_up && !lastUp) targetVelocity += VELOCITY_STEP;
-            // if (gamepad2.dpad_down && !lastDown) targetVelocity -= VELOCITY_STEP;
-            // targetVelocity = Range.clip(targetVelocity, MIN_VELOCITY, MAX_VELOCITY);
-
-            // lastUp = gamepad2.dpad_up;
-            // lastDown = gamepad2.dpad_down;
-
-            // if (gamepad2.a) {
-            //     pollenTurret.setVelocity(targetVelocity);
-            // } else {
-            //     pollenTurret.setVelocity(0);
-            //     nectarTurret.setVelocity(0);
-            // }
-            // if(gamepad2.b){
-            //     nectarTurret.setVelocity(targetVelocity);
-            // }
-
-
-
-            // LLResult result = limelight.getLatestResult();
-            // pollenAligner.update(result, telemetry, "Pollen");
-            // nectarAligner.update(result, telemetry, "Nectar");
-
-            // if (result != null && result.isValid()) {
-            //     telemetry.addData("Target TX", result.getTx());
-            //     telemetry.addData("Target TY", result.getTy());
-            // } else {
-            //     telemetry.addLine("No Tag Detected.");
-            // }
-
-            // if(gamepad2.dpad_left){
-            //     flowerServo.setPower(-1);
-            //     sleep(500);
-            //     flowerServo.setPower(0);
-            // }else if(gamepad2.dpad_right){
-            //     flowerServo.setPower(1);
-            //     sleep(500);
-            //     flowerServo.setPower(0);
-            // }
-            // telemetry.addData("Target velocity", targetVelocity);
-            // telemetry.addData("Pollen Turret velocity", pollenTurret.getVelocity());
-            // telemetry.addData("Pollen amps", pollenTurret.getCurrent(CurrentUnit.AMPS));
-            // telemetry.addData("Battery V", hardwareMap.voltageSensor.iterator().next().getVoltage());
-            // telemetry.addData("Pollen pos", pollenServo.getPosition());
-            // telemetry.addData("Nectar pos", nectarServo.getPosition());
-            // telemetry.addData("Flower pos", flowerServo.getPower());
-            // telemetry.addLine("CONTROLS:");
-            // telemetry.addLine("A - Pollen turret");
-            // telemetry.addLine("B - Nectar turret");
-            // telemetry.addLine("X - Feeder");
-            // telemetry.addLine("Y - Intake");
-            // telemetry.addLine("DPAD LEFT - Flower servo down");
-            // telemetry.addLine("DPAD RIGHT - Flower servo up");
-            // telemetry.addLine("DPAD UP/DOWN - Turret velocity adjuster");
-            // telemetry.addLine("BACK - Stop Turrets");
-            // telemetry.addLine("Right Bumper - Turbo Mode/Speed");
-            // telemetry.addLine("Limelight auto-align is always on");
-            // telemetry.addLine("MOVEMENT & INTAKE GAMEPAD 1");
-            // telemetry.addLine("FEEDER & EVT ELSE");
-            // telemetry.addData("Pollen pos", pollenTurret.getCurrentPosition());
-            // telemetry.addData("Pollen vel", pollenTurret.getVelocity());
-            // telemetry.addData("Pollen power", pollenTurret.getPower());
-            // telemetry.addData("Nectar pos", nectarTurret.getCurrentPosition());
-            // telemetry.addData("Nectar vel", nectarTurret.getVelocity());
-            // telemetry.addData("Nectar power", nectarTurret.getPower());
-            // telemetry.update();
+            // ---------------- Telemetry ----------------
+            telemetry.addData("Target velocity", targetVelocity);
+            telemetry.addData("Gamepad2.A pressed", gamepad2.a);
+            telemetry.addData("Pollen pos", pollenTurret.getCurrentPosition());
+            telemetry.addData("Pollen vel", pollenTurret.getVelocity());
+            telemetry.addData("Nectar vel", nectarTurret.getVelocity());
+            telemetry.addData("Pollen power", pollenTurret.getPower());
+            telemetry.update();
         }
 
+        // ---------------- Shutdown ----------------
+        pollenTurret.setVelocity(0);
+        pollenTurret.setPower(0);
         // pollenAligner.stop();
         // nectarAligner.stop();
         // limelight.stop();
