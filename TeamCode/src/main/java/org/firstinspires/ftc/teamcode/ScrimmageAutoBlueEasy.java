@@ -85,14 +85,14 @@ public class ScrimmageAutoBlueEasy extends LinearOpMode {
 
         // pollenTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        Pose2d beginPose = new Pose2d(new Vector2d(-60,60), Math.toRadians(180));
+        Pose2d beginPose = new Pose2d(new Vector2d(60,60), Math.toRadians(0));
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
         waitForStart();
 
         Action Scrimmage2Auto = drive.actionBuilder(beginPose)
 
-                .strafeTo(new Vector2d(32,60))
+                .strafeTo(new Vector2d(48,60))
 
                 .build();
 
