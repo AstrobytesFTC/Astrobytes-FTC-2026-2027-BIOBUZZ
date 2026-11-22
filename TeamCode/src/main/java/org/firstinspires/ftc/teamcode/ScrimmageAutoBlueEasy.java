@@ -92,7 +92,7 @@ public class ScrimmageAutoBlueEasy extends LinearOpMode {
 
         Action Scrimmage2Auto = drive.actionBuilder(beginPose)
 
-                .strafeTo(new Vector2d(48,60))
+                .strafeTo(new Vector2d(51,60))
 
                 .build();
 
