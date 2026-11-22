@@ -1,104 +1,124 @@
 package org.firstinspires.ftc.teamcode;
 
-
-// RR-specific imports
-import static java.lang.Thread.sleep;
+import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
-
-// Non-RR imports
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.InstantFunction;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.acmerobotics.roadrunner.Vector2d;
-import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
-
 
 @Config
 @Autonomous(name = "Scrimmage Auto Red", group = "Autonomous")
 public class ScrimmageAutoRedSide extends LinearOpMode {
 
-
-    private DcMotor frontLeftMotor;
-    private DcMotor backLeftMotor;
-    private DcMotor frontRightMotor;
-    private DcMotor backRightMotor;
-
     private DcMotor intake;
     private DcMotorEx feeder;
     private DcMotorEx pollenTurret;
+    private DcMotorEx nectarTurret;
 
     private Servo pollenServo;
     private Servo nectarServo;
     private CRServo flowerServo;
-    private DcMotorEx nectarTurret;
 
+    public static double velocityPowerFar = 1300;
+    public static double velocityPowerNear = 1250;
 
-    double velocityPowerFar = 1690;
-    double velocityPowerNear = 1350;
-    // lift class
-    private boolean initialized = false;
+    public class frontShot implements Action {
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            pollenTurret.setVelocity(velocityPowerNear);
+            return false;
+        }
+    }
 
+    public class stopShot implements Action {
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            pollenTurret.setVelocity(0);
+            return false;
+        }
+    }
 
+    public class feedIn implements Action {
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            feeder.setPower(1);
+            return false;
+        }
+    }
+
+    public class stopFeed implements Action {
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            feeder.setPower(0);
+            return false;
+        }
+    }
+
+    @Override
     public void runOpMode() {
-
-
-        frontLeftMotor = hardwareMap.dcMotor.get("fl");
-        backLeftMotor = hardwareMap.dcMotor.get("bl");
-        frontRightMotor = hardwareMap.dcMotor.get("fr");
-        backRightMotor = hardwareMap.dcMotor.get("br");
         intake = hardwareMap.dcMotor.get("intake");
         feeder = hardwareMap.get(DcMotorEx.class, "feeder");
         pollenTurret = hardwareMap.get(DcMotorEx.class, "pt");
+        nectarTurret = hardwareMap.get(DcMotorEx.class, "nt");
+
         pollenServo = hardwareMap.get(Servo.class, "ps");
         nectarServo = hardwareMap.get(Servo.class, "ns");
-        nectarTurret = hardwareMap.get(DcMotorEx.class, "nt");
         flowerServo = hardwareMap.get(CRServo.class, "fs");
-
-//        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-//        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        // frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        // backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        DcMotor[] driveMotors = {frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor};
-        for (DcMotor m : driveMotors) {
-            m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            m.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        }
 
         // ---------------- Turret setup ----------------
         pollenTurret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         pollenTurret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         pollenTurret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         pollenTurret.setDirection(DcMotorSimple.Direction.REVERSE);
-//        pollenTurret.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        Pose2d beginPose = new Pose2d(new Vector2d(63,-16), Math.toRadians(0));
-
+        Pose2d beginPose = new Pose2d(new Vector2d(63, -16), Math.toRadians(0));
         MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
+
         waitForStart();
 
         Action Scrimmage2Auto = drive.actionBuilder(beginPose)
                 .lineToX(53)
-                .strafeTo(new Vector2d(21,-54))
-                .strafeTo(new Vector2d(-28,-60))
+                .stopAndAdd(new SequentialAction(
+                        new frontShot(),
+                        new SleepAction(2.5),
+                        // First feed
+                        new feedIn(),
+                        new SleepAction(0.75),
+                        new stopFeed(),
+                        new SleepAction(0.75), // Pause for flywheel RPM recovery
+                        // Second feed
+                        new feedIn(),
+                        new SleepAction(0.75),
+                        new stopFeed(),
+                        new SleepAction(0.75),
+                        // Third feed
+                        new feedIn(),
+                        new SleepAction(0.75),
+                        new stopFeed(),
+                        new SleepAction(0.75),
+                        // Fourth feed
+                        new feedIn(),
+                        new SleepAction(0.75),
+                        new stopFeed(),
+                        // Stop shooter
+                        new stopShot()
+                ))
+                .strafeTo(new Vector2d(21, -54))
+                .strafeTo(new Vector2d(-28, -60))
                 .build();
 
-
-        Actions.runBlocking(new SequentialAction(Scrimmage2Auto));
-
-        telemetry.update();
-
-
-
+        Actions.runBlocking(Scrimmage2Auto);
     }
-
 }

@@ -192,13 +192,13 @@ public class beaverbotsScrimmageTeleOpPray extends LinearOpMode {
 
             if (gamepad2.a) {
                 //set pidf coeffs later
-                pollenTurret.setVelocity(1500);
+                pollenTurret.setVelocity(1250);
             } else if(gamepad2.b){
                 nectarTurret.setVelocity(1750);
             } else if(gamepad2.x){
-                pollenTurret.setVelocity(1600);
+                pollenTurret.setVelocity(1300);
             } else if(gamepad2.y){
-                nectarTurret.setVelocity(1850);
+                nectarTurret.setVelocity(1800);
             } else if(gamepad2.back){
                 nectarTurret.setVelocity(0);
                 pollenTurret.setVelocity(0);
