@@ -19,11 +19,11 @@ public class AutoAlignOpmodeNew extends OpMode {
     @Override
     public void init() {
         limelight= hardwareMap.get(Limelight3A.class, "limelight");
-        pollenTurret.init(hardwareMap, "pss");
+        pollenTurret.init(hardwareMap, "ps");
         nectarTurret.init(hardwareMap, "ns");
 // adjust the offsets as needed
         pollenTurret.setOffset(0);
-        nectarTurret.setOffset(2);
+        nectarTurret.setOffset(0);
 
         limelight.pipelineSwitch(0);
         telemetry.addLine("Initialized all mechanisms");
