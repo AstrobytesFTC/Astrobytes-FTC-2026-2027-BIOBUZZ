@@ -8,8 +8,8 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class TurretLimelightNew {
     private Servo turretServo;
-    private double kP = 0.003;
-    private double kD = 0;
+    private double kP = 0.0015;
+    private double kD = 0.00003;
     private double goalX = 0;
     private double lastError = 0;
     private double angleTolerance = 0.5;
