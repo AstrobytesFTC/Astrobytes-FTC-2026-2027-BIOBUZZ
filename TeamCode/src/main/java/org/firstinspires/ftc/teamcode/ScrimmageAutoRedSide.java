@@ -32,7 +32,7 @@ public class ScrimmageAutoRedSide extends LinearOpMode {
     private CRServo flowerServo;
 
     public static double velocityPowerFar = 1300;
-    public static double velocityPowerNear = 1250;
+    public static double velocityPowerNear = 1400;
 
     public class frontShot implements Action {
         @Override
@@ -89,31 +89,31 @@ public class ScrimmageAutoRedSide extends LinearOpMode {
         waitForStart();
 
         Action Scrimmage2Auto = drive.actionBuilder(beginPose)
-                .lineToX(53)
+                .lineToX(58)
                 .stopAndAdd(new SequentialAction(
                         new frontShot(),
                         new SleepAction(2.5),
                         // First feed
                         new feedIn(),
-                        new SleepAction(0.75),
+                        new SleepAction(0.4),
                         new stopFeed(),
-                        new SleepAction(0.75), // Pause for flywheel RPM recovery
-                        // Second feed
+                        new SleepAction(1.5), // Pause for flywheel RPM recovery
+                         //Second feed
                         new feedIn(),
-                        new SleepAction(0.75),
+                        new SleepAction(0.4),
                         new stopFeed(),
-                        new SleepAction(0.75),
+                        new SleepAction(1.5),
                         // Third feed
                         new feedIn(),
-                        new SleepAction(0.75),
+                        new SleepAction(0.4),
                         new stopFeed(),
-                        new SleepAction(0.75),
-                        // Fourth feed
-                        new feedIn(),
-                        new SleepAction(0.75),
-                        new stopFeed(),
-                        // Stop shooter
-                        new stopShot()
+                        new SleepAction(1.5)
+//                        // Fourth feed
+//                        new feedIn(),
+//                        new SleepAction(0.4),
+//                        new stopFeed(),
+//                        // Stop shooter
+//                        new stopShot()
                 ))
                 .strafeTo(new Vector2d(21, -54))
                 .strafeTo(new Vector2d(-28, -60))

@@ -32,7 +32,7 @@ public class ScrimmageAutoBlueSide extends LinearOpMode {
     private CRServo flowerServo;
 
     public static double velocityPowerFar = 1300;
-    public static double velocityPowerNear = 1250;
+    public static double velocityPowerNear = 1400;
 
     public class frontShot implements Action {
         @Override
@@ -95,25 +95,25 @@ public class ScrimmageAutoBlueSide extends LinearOpMode {
                         new SleepAction(2.5),
                         // First feed
                         new feedIn(),
-                        new SleepAction(0.75),
+                        new SleepAction(0.4),
                         new stopFeed(),
-                        new SleepAction(0.4), // Pause for flywheel RPM recovery
+                        new SleepAction(1.5), // Pause for flywheel RPM recovery
                         // Second feed
                         new feedIn(),
-                        new SleepAction(0.75),
-                        new stopFeed(),
                         new SleepAction(0.4),
+                        new stopFeed(),
+                        new SleepAction(1.5),
                         // Third feed
                         new feedIn(),
-                        new SleepAction(0.75),
-                        new stopFeed(),
                         new SleepAction(0.4),
-                        // Fourth feed
-                        new feedIn(),
-                        new SleepAction(0.75),
                         new stopFeed(),
-                        // Stop shooter
-                        new stopShot()
+                        new SleepAction(1.5)
+//                        // Fourth feed
+//                        new feedIn(),
+//                        new SleepAction(0.75),
+//                        new stopFeed(),
+//                        // Stop shooter
+//                        new stopShot()
                 ))
                 .strafeTo(new Vector2d(-21, 52))
                 .strafeTo(new Vector2d(30, 59))
