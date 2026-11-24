@@ -13,7 +13,7 @@ public class TurretLimelightNew {
     private double goalX = 0;
     private double lastError = 0;
     private double angleTolerance = 0.5;
-    private final double MAX_STEP = 0.01;
+    private final double MAX_STEP = 0.02;
 
     private double minPosition = 0.3;
     private double maxPosition = 0.8;
