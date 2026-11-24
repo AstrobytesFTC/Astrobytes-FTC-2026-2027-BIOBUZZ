@@ -172,7 +172,7 @@ public class beaverbotsScrimmageTeleOpPray extends LinearOpMode {
             backRightMotor.setPower(brP * scale);
 
             // ---------------- Intake and feeder ----------------
-            intake.setPower((gamepad1.right_trigger - gamepad1.left_trigger) );
+            intake.setPower((gamepad1.left_trigger - gamepad1.right_trigger) );
 
             // NOTE: right_bumper is also turbo above, so reversing the feeder also turbos.
             if (gamepad2.left_bumper) {
@@ -237,6 +237,10 @@ public class beaverbotsScrimmageTeleOpPray extends LinearOpMode {
             telemetry.addData("Pollen vel", pollenTurret.getVelocity());
             telemetry.addData("Nectar vel", nectarTurret.getVelocity());
             telemetry.addData("Pollen power", pollenTurret.getPower());
+            telemetry.addLine("A - pollen 1250");
+            telemetry.addLine("B - nectar 1750");
+            telemetry.addLine("X - pollen 1300");
+            telemetry.addLine("Y - nectar 1800");
             telemetry.update();
         }
 
