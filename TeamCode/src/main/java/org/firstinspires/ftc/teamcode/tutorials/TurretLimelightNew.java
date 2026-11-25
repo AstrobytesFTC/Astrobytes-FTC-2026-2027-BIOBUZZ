@@ -12,14 +12,16 @@ public class TurretLimelightNew {
     private double kD = 0.00003;
     private double goalX = 0;
     private double lastError = 0;
-    private double angleTolerance = 0.5;
-    private final double MAX_STEP = 0.02;
+    private double angleTolerance = 0.7;
+    private final double MAX_STEP = 0.008;
 
     private double minPosition = 0.3;
     private double maxPosition = 0.8;
     private double currentPosition = 0.5;
     private double power = 0;
     private double offset = 0;
+    private boolean firstRun = true;
+    private double lastTimestamp = -1;
     private final ElapsedTime timer = new ElapsedTime();
     public void init(HardwareMap hwMap, String servoName) {
 
@@ -50,8 +52,11 @@ public class TurretLimelightNew {
 
     }
     public void resetTimer(){
-        timer.reset();
-        lastError = 0;
+
+            timer.reset();
+            lastError = 0;
+            firstRun = true;
+            lastTimestamp = -1;
 
 
     }
@@ -61,28 +66,28 @@ public class TurretLimelightNew {
     }
     // () part might need a change below
     public void update(LLResult result, Telemetry telemetry, String name){
+        if (result == null || !result.isValid()) {
+            firstRun = true;
+            return;
+        }
+
+        double ts = result.getTimestamp();
+        if (ts == lastTimestamp) return;   // same frame, don't move again
+        lastTimestamp = ts;
+
         double deltaTime = timer.seconds();
         timer.reset();
-        if (result == null || !result.isValid()) {
-//            turret.setPower(0);
-            lastError = 0;
-            timer.reset();
-            return;
 
-        }
-// start pD controlller
-        //if turret moves away from target put result.getTx first
         double adjustedTx = result.getTx() + offset;
-
-        double error = goalX - adjustedTx ;
+        double error = goalX - adjustedTx;
         double pTerm = error * kP;
         double dTerm = 0;
 
-        if (deltaTime > 0) {
-            dTerm = ((error-lastError)/ deltaTime) * kD;
-            lastError = error;
-
+        if (!firstRun && deltaTime > 0) {
+            dTerm = ((error - lastError) / deltaTime) * kD;
         }
+        lastError = error;
+        firstRun = false;
         if (Math.abs(error)< angleTolerance) {
             power = 0;
         } else {

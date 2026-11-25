@@ -119,6 +119,8 @@ public class Qual1Teleop extends LinearOpMode {
 //         ---------------- Vision setup (disabled) ----------------
         pollenAligner.init(hardwareMap, "ps");
         nectarAligner.init(hardwareMap, "ns");
+        pollenAligner.setOffset(2.0);
+
         limelight.pipelineSwitch(0);
 
         // ---------------- IMU ----------------
