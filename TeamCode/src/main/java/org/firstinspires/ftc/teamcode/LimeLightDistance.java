@@ -4,31 +4,31 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
 
 @TeleOp(name = "Automatic Hood Test")
 public class LimeLightDistance extends LinearOpMode {
 
     // Hardware
-    private DcMotorEx phood;
+    private Servo phood;
     private Limelight3A limelight;
 
     // GEAR CONFIGURATION
-    private static final double MOTOR_TEETH = 10.0;
+    private static final double MOTOR_TEETH = 10.0;   // pinion on the servo
     private static final double ARC_TEETH = 15.0;
 
-    // Motor rotations per hood rotation
-    private static final double GEAR_RATIO =
-            ARC_TEETH / MOTOR_TEETH;
+    // SERVO SETTINGS
+    // Total travel of your servo in degrees (300 = standard, 1800 = goBILDA 5-turn)
+    private static final double SERVO_RANGE_DEGREES = 1800;
 
-    // IMPORTANT:
-// Replace this with the correct encoder counts per
-// motor revolution once the goBILDA model is identified.
-    private static final double ENCODER_TICKS_PER_REV = 537.7;
+    // Adjust if the hood doesn't line up with servo position 0.0
+    private static final double SERVO_ZERO_OFFSET = 0.0;
 
-// HOOD POSITIONS (HOOD ARC TEETH)
+    // Time to wait for the servo to reach its position (no feedback available)
+    private static final long MOVE_TIME_MS = 600;
 
+    // HOOD POSITIONS (HOOD ARC TEETH)
     private static final int CLOSE = 1;
     private static final int MIDDLE = 2;
     private static final int FAR = 3;
@@ -37,27 +37,16 @@ public class LimeLightDistance extends LinearOpMode {
     private static final double MIDDLE_TEETH = 9;
     private static final double FAR_TEETH = 7;
 
-// ASSIGNMENT VELOCITIES
-// Assumed to be encoder ticks per second.
-
-    private static final double CLOSE_VELOCITY = 1250;
-    private static final double MIDDLE_VELOCITY = 1200;
-    private static final double FAR_VELOCITY = 1200;
-
-// DISTANCE SETTINGS (INCHES)
-
+    // DISTANCE SETTINGS (INCHES)
     private static final double CLOSE_DISTANCE = 27;
     private static final double MIDDLE_DISTANCE = 39;
     private static final double FAR_DISTANCE = 43;
 
-// Distance transition thresholds
-// These are halfway points between assignment distances.
-
+    // Distance transition thresholds (halfway points between assignment distances)
     private static final double CLOSE_TO_MIDDLE = 33;
     private static final double MIDDLE_TO_FAR = 41;
 
-// VISION SETTINGS
-
+    // VISION SETTINGS
     private static final double CAMERA_HEIGHT = 42;
     private static final double GOAL_HEIGHT = 74.95;
     private static final double CAMERA_ANGLE = 45;
@@ -70,8 +59,7 @@ public class LimeLightDistance extends LinearOpMode {
     private static final double MIN_DISTANCE = 10;
     private static final double MAX_DISTANCE = 100;
 
-// STATE
-
+    // STATE
     private double filteredDistance = 0;
     private double distance = 0;
 
@@ -88,10 +76,10 @@ public class LimeLightDistance extends LinearOpMode {
     private long lastValidTargetTime = 0;
     private double lastTimestamp = Double.NaN;
 
-    private int targetEncoderPosition = 0;
+    private double targetServoPosition = 0;
+    private long moveStartTime = 0;
 
-// DISTANCE CALCULATION
-
+    // DISTANCE CALCULATION
     private double getDistance(double ty) {
 
         if (!Double.isFinite(ty)) {
@@ -120,8 +108,7 @@ public class LimeLightDistance extends LinearOpMode {
         return result;
     }
 
-// HOOD POSITION CALCULATIONS
-
+    // HOOD POSITION CALCULATIONS
     private double getHoodTeeth(int position) {
 
         switch (position) {
@@ -140,46 +127,21 @@ public class LimeLightDistance extends LinearOpMode {
         }
     }
 
-    private double getVelocity(int position) {
-
-        switch (position) {
-
-            case CLOSE:
-                return CLOSE_VELOCITY;
-
-            case MIDDLE:
-                return MIDDLE_VELOCITY;
-
-            case FAR:
-                return FAR_VELOCITY;
-
-            default:
-                return FAR_VELOCITY;
-        }
-    }
-
-// Convert hood arc tooth position into motor encoder position.
-//
-// This assumes the tooth references correspond to evenly
-// spaced positions on the same 15-tooth arc.
-
-    private int getEncoderTarget(int position) {
+    // Converts hood arc teeth into a 0..1 servo position.
+    // Pinion revolutions = arc teeth moved / pinion teeth
+    private double getServoPosition(int position) {
 
         double teeth = getHoodTeeth(position);
 
-        double hoodRotations = teeth / ARC_TEETH;
+        double servoRevs = teeth / MOTOR_TEETH;
+        double servoDegrees = servoRevs * 360.0;
 
-        double motorRotations =
-                hoodRotations * GEAR_RATIO;
-
-        double encoderTicks =
-                motorRotations * ENCODER_TICKS_PER_REV;
-
-        return (int) Math.round(encoderTicks);
+        return Range.clip(
+                servoDegrees / SERVO_RANGE_DEGREES + SERVO_ZERO_OFFSET,
+                0.0, 1.0);
     }
 
-// POSITION SELECTION
-
+    // POSITION SELECTION
     private int getDesiredPosition(double d) {
 
         if (hoodPosition == FAR) {
@@ -216,8 +178,7 @@ public class LimeLightDistance extends LinearOpMode {
         return FAR;
     }
 
-// POSITION CONFIRMATION
-
+    // POSITION CONFIRMATION
     private void updateTarget(double d) {
 
         if (moving) {
@@ -253,8 +214,7 @@ public class LimeLightDistance extends LinearOpMode {
         }
     }
 
-// HOOD MOVEMENT
-
+    // HOOD MOVEMENT
     private void moveHood(int position) {
 
         if (moving || position == hoodPosition) {
@@ -265,43 +225,29 @@ public class LimeLightDistance extends LinearOpMode {
             return;
         }
 
-        targetEncoderPosition = getEncoderTarget(position);
-
+        targetServoPosition = getServoPosition(position);
         pendingPosition = position;
 
-        phood.setTargetPosition(targetEncoderPosition);
+        phood.setPosition(targetServoPosition);
 
-        phood.setMode(
-                DcMotor.RunMode.RUN_TO_POSITION
-        );
-
-        phood.setVelocity(
-                getVelocity(position)
-        );
-
+        moveStartTime = System.currentTimeMillis();
         moving = true;
     }
 
-// MOVEMENT CONTROL
-
+    // MOVEMENT CONTROL (timer based, since servos give no feedback)
     private void updateMovement() {
 
         if (!moving) {
             return;
         }
 
-        if (!phood.isBusy()) {
-
-            phood.setVelocity(0);
-
+        if (System.currentTimeMillis() - moveStartTime >= MOVE_TIME_MS) {
             moving = false;
-
             hoodPosition = pendingPosition;
         }
     }
 
-// LIMELIGHT PROCESSING
-
+    // LIMELIGHT PROCESSING
     private void updateVision() {
 
         LLResult result = limelight.getLatestResult();
@@ -363,34 +309,19 @@ public class LimeLightDistance extends LinearOpMode {
         }
     }
 
-// MAIN OPMODE
-
+    // MAIN OPMODE
     @Override
     public void runOpMode() {
 
-        phood = hardwareMap.get(
-                DcMotorEx.class, "phood"
-        );
+        phood = hardwareMap.get(Servo.class, "phood");
 
         limelight = hardwareMap.get(
                 Limelight3A.class, "limelight"
         );
 
-        phood.setZeroPowerBehavior(
-                DcMotor.ZeroPowerBehavior.BRAKE
-        );
-
-        phood.setMode(
-                DcMotor.RunMode.STOP_AND_RESET_ENCODER
-        );
-
-        phood.setTargetPosition(0);
-
-        phood.setMode(
-                DcMotor.RunMode.RUN_TO_POSITION
-        );
-
-        phood.setVelocity(0);
+        // Start at FAR, matching the "place hood at FAR" instruction
+        targetServoPosition = getServoPosition(FAR);
+        phood.setPosition(targetServoPosition);
 
         limelight.pipelineSwitch(0);
 
@@ -400,12 +331,12 @@ public class LimeLightDistance extends LinearOpMode {
                 "Place hood at FAR starting position"
         );
 
-        telemetry.addData("Motor Gear Teeth", MOTOR_TEETH);
+        telemetry.addData("Pinion Teeth", MOTOR_TEETH);
         telemetry.addData("Hood Arc Teeth", ARC_TEETH);
 
-        telemetry.addData("Position 1", "27 in / 13 teeth / 1250");
-        telemetry.addData("Position 2", "39 in / 9 teeth / 1200");
-        telemetry.addData("Position 3", "43 in / 7 teeth / 1200");
+        telemetry.addData("Position 1", "27 in / 13 teeth");
+        telemetry.addData("Position 2", "39 in / 9 teeth");
+        telemetry.addData("Position 3", "43 in / 7 teeth");
 
         telemetry.update();
 
@@ -425,49 +356,23 @@ public class LimeLightDistance extends LinearOpMode {
 
                 updateVision();
 
-                telemetry.addData(
-                        "Target Visible", targetVisible
-                );
+                telemetry.addData("Target Visible", targetVisible);
 
-                telemetry.addData(
-                        "Distance (inches)", "%.2f", distance
-                );
+                telemetry.addData("Distance (inches)", "%.2f", distance);
 
-                telemetry.addData(
-                        "Hood Position", hoodPosition
-                );
+                telemetry.addData("Hood Position", hoodPosition);
 
-                telemetry.addData(
-                        "Hood Arc Teeth",
-                        getHoodTeeth(hoodPosition)
-                );
+                telemetry.addData("Hood Arc Teeth", getHoodTeeth(hoodPosition));
 
-                telemetry.addData(
-                        "Target Encoder",
-                        targetEncoderPosition
-                );
+                telemetry.addData("Target Servo Pos", "%.3f", targetServoPosition);
 
-                telemetry.addData(
-                        "Current Encoder",
-                        phood.getCurrentPosition()
-                );
+                telemetry.addData("Commanded Servo Pos", "%.3f", phood.getPosition());
 
-                telemetry.addData(
-                        "Target Velocity",
-                        getVelocity(hoodPosition)
-                );
+                telemetry.addData("Moving", moving);
 
-                telemetry.addData(
-                        "Moving", moving
-                );
+                telemetry.addData("Confirmations", confirmations);
 
-                telemetry.addData(
-                        "Confirmations", confirmations
-                );
-
-                telemetry.addData(
-                        "Gear Ratio", "10:15"
-                );
+                telemetry.addData("Gear Ratio", "10:15");
 
                 telemetry.update();
 
@@ -475,8 +380,6 @@ public class LimeLightDistance extends LinearOpMode {
             }
 
         } finally {
-
-            phood.setVelocity(0);
 
             limelight.stop();
         }
