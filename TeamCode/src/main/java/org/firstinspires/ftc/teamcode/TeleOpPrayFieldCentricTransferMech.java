@@ -48,6 +48,8 @@ public class TeleOpPrayFieldCentricTransferMech extends LinearOpMode {
 
     // ---------------- State ----------------
     private double targetVelocity = 2000;
+    private double polTargetVel = 1250;
+    private double necTargetVel= 1600;
 
     // Non-blocking timer for flower servo
     private final ElapsedTime flowerTimer = new ElapsedTime();
@@ -152,7 +154,7 @@ public class TeleOpPrayFieldCentricTransferMech extends LinearOpMode {
 
             // ---------------- Intake ----------------
             double intakePower = gamepad1.left_trigger - gamepad1.right_trigger;
-            intake.setPower(intakePower);
+            intake.setPower(intakePower*0.85);
 
             // ---------------- Turrets ----------------
             if (gamepad2.a) {
@@ -172,18 +174,18 @@ public class TeleOpPrayFieldCentricTransferMech extends LinearOpMode {
                 nectarTurret.setVelocity(0);
             }
 
-            // ---------------- Non-Blocking Dual Flower Servos ----------------
+            // ---------------- Simultaneous Dual Flower Servos ----------------
             if (gamepad2.dpad_up) {
                 flowerServo.setPower(1.0);
-                flowerServo2.setPower(-1.0); // Reverse of flowerServo
+                flowerServo2.setPower(1.0);
                 flowerTimer.reset();
                 flowerRunning = true;
             } else if (gamepad2.dpad_down) {
                 flowerServo.setPower(-1.0);
-                flowerServo2.setPower(1.0);  // Reverse of flowerServo
+                flowerServo2.setPower(-1.0);
                 flowerTimer.reset();
                 flowerRunning = true;
-            } else if (flowerRunning && flowerTimer.milliseconds() >= 500) {
+            } else if (!flowerRunning || flowerTimer.milliseconds() >= 300) {
                 flowerServo.setPower(0.0);
                 flowerServo2.setPower(0.0);
                 flowerRunning = false;
@@ -193,8 +195,8 @@ public class TeleOpPrayFieldCentricTransferMech extends LinearOpMode {
             double pollenVel = pollenTurret.getVelocity();
             double nectarVel = nectarTurret.getVelocity();
 
-            boolean pollenOnTarget = gamepad2.a && (Math.abs(pollenVel - 1250) <= 125);
-            boolean nectarOnTarget = gamepad2.b && (Math.abs(nectarVel - 1600) <= 160);
+            boolean pollenOnTarget = gamepad2.a && (Math.abs(pollenVel - polTargetVel) <= polTargetVel*.1);
+            boolean nectarOnTarget = gamepad2.b && (Math.abs(nectarVel - necTargetVel) <= necTargetVel*.1);
 
             boolean autoFeed = false;
             if (gamepad2.a && gamepad2.b) {
@@ -206,13 +208,13 @@ public class TeleOpPrayFieldCentricTransferMech extends LinearOpMode {
             }
 
             if (gamepad2.left_bumper) {
-                feeder.setPower(1.0);  // Manual feed forward
+                feeder.setPower(1.0);   // Manual feed forward
             } else if (gamepad2.right_bumper) {
-                feeder.setPower(-0.5); // Slow reverse transfer (50%)
+                feeder.setPower(-0.65); // Slow reverse transfer
             } else if (autoFeed) {
-                feeder.setPower(1.0);  // Auto feed on target speed
-            } else if (gamepad1.left_trigger > 0.1) {
-                feeder.setPower(0.5);  // When intake runs forward, feeder runs at 50%
+                feeder.setPower(1.0);   // Auto feed on target speed
+            } else if (Math.abs(intakePower) > 0.05) {
+                feeder.setPower(intakePower > 0 ? -0.85 : 0.85); // Increased feeder speed when intake is running
             } else {
                 feeder.setPower(0.0);
             }
@@ -222,6 +224,8 @@ public class TeleOpPrayFieldCentricTransferMech extends LinearOpMode {
             telemetry.addData("Pollen vel", pollenTurret.getVelocity());
             telemetry.addData("Nectar vel", nectarTurret.getVelocity());
             telemetry.addData("Feeder power", feeder.getPower());
+            telemetry.addData("flowerServo Pos", flowerServo.getDirection());
+            telemetry.addData("flowerServo2 Pos", flowerServo2.getDirection());
             telemetry.update();
         }
 
