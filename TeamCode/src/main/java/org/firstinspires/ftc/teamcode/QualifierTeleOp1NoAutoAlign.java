@@ -16,7 +16,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 @TeleOp
-public class TeleOpPrayFieldCentricTransferMech extends LinearOpMode {
+public class QualifierTeleOp1NoAutoAlign extends LinearOpMode {
 
     // ---------------- Constants ----------------
     private static final double NORMAL_SPEED = 0.5;
@@ -154,17 +154,21 @@ public class TeleOpPrayFieldCentricTransferMech extends LinearOpMode {
 
             // ---------------- Intake ----------------
             double intakePower = gamepad1.left_trigger - gamepad1.right_trigger;
-            intake.setPower(intakePower*0.85);
+            intake.setPower(intakePower*0.8);
 
             // ---------------- Turrets ----------------
             if (gamepad2.a) {
-                pollenTurret.setVelocity(1250);
+                pollenTurret.setVelocity(polTargetVel);
+            } else if (Math.abs(intakePower) > 0.05) {
+                pollenTurret.setVelocity(-200); // Slow reverse when intake runs
             } else {
                 pollenTurret.setVelocity(0);
             }
 
             if (gamepad2.b) {
-                nectarTurret.setVelocity(1600);
+                nectarTurret.setVelocity(necTargetVel);
+            } else if (Math.abs(intakePower) > 0.05) {
+                nectarTurret.setVelocity(-200); // Slow reverse when intake runs
             } else {
                 nectarTurret.setVelocity(0);
             }
